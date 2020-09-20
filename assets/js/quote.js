@@ -8,14 +8,32 @@ $(document).ready(function () {
         installationFeePercentage: null
     };
 
+
     $('.formField').on('keyup', function () {
         doCalc();
     });
-
-
-    $('#standart, #premium, #excelium').on('click', function () {
-        document.getElementById('elevPriceUnit').value = (7565).toFixed(2) + " $";
+    
+    // bUG 5 - add cal to field 
+    $('.required formField').on('keyup', function () {
         doCalc();
+    });
+    
+  
+    // Bug 1 - Erreur   
+    //$('#standart, #premium, #excelium').on('click', function () {
+    
+    // Bug 1,10 - Correction
+    $('#standard, #premium, #excelium').on('click', function () {
+
+        // Bug 1 - Erreur   
+        //document.getElementById('elevPriceUnit').value = (7565).toFixed(2) + " $";
+        //doCalc();
+
+        // Bug 1 - Correction
+        getProdRange();
+        document.getElementById('elevPriceUnit').value = prodRange.price.toFixed(2) + " $"; 
+        doCalc();
+
     });
 
     $('#residential, #commercial, #corporate, #hybrid').on('click', function () {
@@ -57,7 +75,8 @@ $(document).ready(function () {
 
         } else if ($('#premium').is(':checked')) {
             prodRange.type = "premium";
-            prodRange.price = parseFloat(123456);
+            // BUG 9 - Premium
+            prodRange.price = parseFloat(12345);
             prodRange.installationFeePercentage = 0.13;
             return prodRange;
 
@@ -75,6 +94,8 @@ $(document).ready(function () {
     };
 
     function GetInfos() {
+        //BUG 5 Calc Residential
+        getInfoNumApp();
         getInfoNumFloors();
         getInfoNumBase();
         getInfoNumElev();
@@ -82,18 +103,36 @@ $(document).ready(function () {
         getProdRange();
     };
 
-    function setRequiredElevatorsResult(finNumElev) {
-        $("#numElev_2, #numElev_3").val(parseFloat(finNumElev));
+           
+        
+        function setRequiredElevatorsResult(finNumElev) {
+
+        // BUG 4 - ADD || 0 FinNumElev
+       //$("#numElev_2, #numElev_3").val(parseFloat(finNumElev));
+
+       
+        $("#numElev_2, #numElev_3").val(parseFloat(finNumElev) || 0 );
+      
     };
 
     function setPricesResults(finNumElev, roughTotal, installFee, total) {
         $("#elevTotal").val(parseFloat(roughTotal).toFixed(2) + " $");
         $("#installationFee").val(parseFloat(installFee).toFixed(2) + " $");
-        $("#total_").val(parseFloat(total).toFixed(2) + " $");
+        $("#total_").val(parseFloat(total).toFixed(2) +" $");
+    
+        // BUG 6 and 7 ADD || 0 roughTotal, installFee, total
+        $("#elevTotal").val(parseFloat(roughTotal) || 0 );
+        $("#installationFee").val(parseFloat(installFee) || 0 );
+        $("#total_").val(parseFloat(total) || 0 );
     };
 
     function emptyElevatorsNumberAndPricesFields() {
-        $('#numElev_3').val('');
+        // BUG 2 - Erreur 
+        // $('#numElev_3').val('');
+        
+        // BUG 2 - Correction
+        $('#numElev_2').val('');
+        
         $('.priceField').val('');
     };
 
@@ -150,6 +189,13 @@ $(document).ready(function () {
             alert("Please enter a positive number!");
             $('#maxOcc').val('');
             return true
+
+        // BUG 3 - Correction
+        } else if ($('#numFloors').val() < 0) {
+
+            alert("Please enter a positive number!");
+            $('#numFloors').val('');
+            return true
         } else {
             return false
         }
@@ -169,7 +215,7 @@ $(document).ready(function () {
             data: JSON.stringify(formData),
             contentType: "application/json; charset=utf-8",
             dataType: "json",
-            success: function (data) {
+            success: function (data) {                
                 setRequiredElevatorsResult(data.finalNumElev);
                 if (prodRange.type != null) {
                     setPricesResults(data.finalNumElev, data.subTotal, data.installationFee, data.grandTotal);
@@ -179,12 +225,15 @@ $(document).ready(function () {
     }
     
     function doCalc() {
-        if ($('#residential').hasClass('active') && !negativeValues() && $('#numApp').val() && $('#numFloors').val()) {
-            apiCall('residential')
-        } else if ($('#commercial').hasClass('active') && !negativeValues() && $('#numElev').val()  && $('#numPark').val()) {
-            apiCall('commercial')
+        if ($('#residential').hasClass('active') && !negativeValues() && $('#numApp').val() && $('#numFloors').val() && $('#numBase').val()) {
+           apiCall('residential')
+        } else if ($('#commercial').hasClass('active') && !negativeValues() && $('#numElev').val()  && $('#numFloors').val() && $('#numBase').val()) {
+          apiCall('commercial')
         } else if ($('#corporate').hasClass('active') && !negativeValues() && $('#numFloors').val() && $('#numBase').val() && $('#maxOcc').val()) {
-            apiCall('commercial')
+            apiCall('corporate')
+        // BUG 8 - ADD HYBRID
+        } else if ($('#hybrid').hasClass('active') && !negativeValues() && $('#numFloors').val() && $('#numBase').val() && $('#maxOcc').val()) {
+            apiCall('hybrid')
         } else {
             emptyElevatorsNumberAndPricesFields();
         };
